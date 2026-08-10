@@ -1,0 +1,21 @@
+{
+  "name": "lms-auth-backend",
+  "version": "1.0.0",
+  "description": "Express + Supabase Auth backend for LMS (student/teacher/admin roles)",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.9",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.2",
+    "morgan": "^1.11.0",
+    "multer": "^2.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
