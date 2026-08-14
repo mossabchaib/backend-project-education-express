@@ -6,24 +6,26 @@ const { logError } = require("../utils/logger");
 
 async function signUp(req, res) {
   try {
-    const { email, password, fullName } = req.body;
+    const { email, password, fullName, role } = req.body;
     if (!email || !password) {
       return errorResponse(res, 400, "email and password are required.");
     }
-
-    const { data, error } = await authService.signUp({ email, password, fullName });
+    console.log("Received role:", role); // Debugging line to check the received role
+    const allowedRoles = ["student", "teacher"]; // admin ما كيتسجلش من هنا أبداً
+    const safeRole = allowedRoles.includes(role) ? role : "student";
+    console.log("Using role:", safeRole); // Debugging line to check the role being used
+    const { data, error } = await authService.signUp({ email, password, fullName, role: safeRole });
     if (error) return errorResponse(res, 400, error.message);
 
-    return successResponse(res, 201, "Account created. Check your email to confirm (if confirmation is enabled).", {
+    return successResponse(res, 201, "Account created. Check your email to confirm.", {
       user: data.user,
-      session: data.session, // قد تكون null إذا email confirmation مفعّل
+      session: data.session,
     });
   } catch (err) {
     logError("signUp failed", err);
     return errorResponse(res, 500, "Unexpected error during sign up.");
   }
 }
-
 async function signIn(req, res) {
   try {
     const { email, password } = req.body;
@@ -86,5 +88,21 @@ async function forgotPassword(req, res) {
     return errorResponse(res, 500, "Unexpected error during password reset request.");
   }
 }
+async function resetPassword(req, res) {
+  try {
+    const { accessToken, refreshToken, newPassword } = req.body;
+    if (!accessToken || !newPassword) {
+      return errorResponse(res, 400, "accessToken and newPassword are required.");
+    }
 
-module.exports = { signUp, signIn, signOut, refreshSession, forgotPassword };
+    const { error } = await authService.resetPassword(accessToken, refreshToken, newPassword);
+    if (error) return errorResponse(res, 400, error.message);
+
+    return successResponse(res, 200, "Password updated successfully.");
+  } catch (err) {
+    logError("resetPassword failed", err);
+    return errorResponse(res, 500, "Unexpected error during password reset.");
+  }
+}
+
+module.exports = { signUp, signIn, signOut, refreshSession, forgotPassword, resetPassword };

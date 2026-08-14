@@ -1,18 +1,39 @@
 // src/services/auth.service.js
-// منطق التواصل المباشر مع Supabase Auth (طبقة معزولة عن الـ controllers)
+const { supabaseAnon, supabaseAdmin } = require("../config/supabaseClient");
+const { sendConfirmationEmail, sendPasswordResetEmail } = require("./email.service");
 
-const { supabaseAnon } = require("../config/supabaseClient");
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:8080/";
 
-/** تسجيل مستخدم جديد. الدور دائمًا "student" (يُضبط تلقائيًا عبر trigger فـ قاعدة البيانات). */
-async function signUp({ email, password, fullName }) {
-  const { data, error } = await supabaseAnon.auth.signUp({
+/**
+ * تسجيل مستخدم جديد بدون ما نخلي Supabase يبعت الإيميل تلقائي.
+ * كنستعملو generateLink (service role) اللي كيخلق المستخدم ويرجع لينا الرابط
+ * بلا ما يبعت شي حاجة، وبعدها كنبعتوه احنا عبر Resend.
+ */
+async function signUp({ email, password, fullName, role }) {
+  console.log("signUp called with:", role); // Debugging line to check the received parameters
+  const { data, error } = await supabaseAdmin.auth.admin.generateLink({
+    type: "signup",
     email,
     password,
     options: {
-      data: { full_name: fullName || "" },
+      data: { full_name: fullName || "", role: role  }, // ← الفرق
+      redirectTo: `${FRONTEND_URL}/auth/callback`,
     },
   });
-  return { data, error };
+
+  if (error) {
+    console.error("Error generating signup link:", error); // Debugging line to log the error
+    return { data: null, error }};
+
+  const confirmationLink = data.properties.action_link;
+
+  try {
+    await sendConfirmationEmail(email, confirmationLink);
+  } catch (err) {
+    return { data: null, error: { message: "User created but failed to send confirmation email." } };
+  }
+
+  return { data, error: null };
 }
 
 /** تسجيل الدخول */
@@ -24,10 +45,6 @@ async function signIn({ email, password }) {
   return { data, error };
 }
 
-/**
- * تسجيل الخروج: كيبطل صلاحية الـ refresh token ديال الجلسة الحالية عبر Supabase Auth.
- * كنديرو setSession باش نربطو المكتبة بالتوكن ديال الطلب الحالي قبل ما نسجلو الخروج.
- */
 async function signOut(accessToken, refreshToken) {
   await supabaseAnon.auth.setSession({
     access_token: accessToken,
@@ -37,7 +54,6 @@ async function signOut(accessToken, refreshToken) {
   return { error };
 }
 
-/** تجديد الـ session بواسطة refresh_token */
 async function refreshSession(refreshToken) {
   const { data, error } = await supabaseAnon.auth.refreshSession({
     refresh_token: refreshToken,
@@ -45,12 +61,38 @@ async function refreshSession(refreshToken) {
   return { data, error };
 }
 
-/** إرسال رابط استرجاع كلمة السر */
+/**
+ * إرسال رابط استرجاع كلمة السر عبر Resend بدل Supabase.
+ */
 async function forgotPassword(email, redirectTo) {
-  const { data, error } = await supabaseAnon.auth.resetPasswordForEmail(email, {
-    redirectTo,
+  const { data, error } = await supabaseAdmin.auth.admin.generateLink({
+    type: "recovery",
+    email,
+    options: {
+      redirectTo: redirectTo || `${FRONTEND_URL}/auth/reset-password`,
+    },
   });
-  return { data, error };
+
+  if (error) return { data: null, error };
+
+  const resetLink = data.properties.action_link;
+
+  try {
+    await sendPasswordResetEmail(email, resetLink);
+  } catch (err) {
+    return { data: null, error: { message: "Failed to send password reset email." } };
+  }
+
+  return { data, error: null };
+}
+async function resetPassword(accessToken, refreshToken, newPassword) {
+  await supabaseAnon.auth.setSession({
+    access_token: accessToken,
+    refresh_token: refreshToken || "",
+  });
+
+  const { error } = await supabaseAnon.auth.updateUser({ password: newPassword });
+  return { error };
 }
 
-module.exports = { signUp, signIn, signOut, refreshSession, forgotPassword };
+module.exports = { signUp, signIn, signOut, refreshSession, forgotPassword, resetPassword };
