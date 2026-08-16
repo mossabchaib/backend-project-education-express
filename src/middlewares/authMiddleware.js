@@ -1,9 +1,11 @@
 // src/middlewares/authMiddleware.js
 // كيتحقق من الـ Authorization header (Bearer <access_token>) عبر Supabase،
-// وإلا كان صحيح كيدير req.user = { id, email, role }.
+// وكيتحقق أيضًا من x-session-id باش يضمن جلسة واحدة نشطة فقط لكل مستخدم.
+// إلا كان كولشي صحيح كيدير req.user = { id, email, role } و req.accessToken.
 
 const { supabaseAnon, supabaseAdmin } = require("../config/supabaseClient");
 const { errorResponse } = require("../utils/response");
+const sessionService = require("../services/session.service");
 
 async function authMiddleware(req, res, next) {
   try {
@@ -30,6 +32,19 @@ async function authMiddleware(req, res, next) {
 
     if (profileError || !profile) {
       return errorResponse(res, 404, "Profile not found for this user.");
+    }
+
+    // 3) نتحققو أن هاد الجهاز مازال صاحب الجلسة النشطة الوحيدة لهاد المستخدم
+    const clientSessionId = req.headers["x-session-id"];
+
+    if (!clientSessionId) {
+      return errorResponse(res, 401, "Missing x-session-id header.");
+    }
+
+    const activeSessionId = await sessionService.getActiveSessionId(userData.user.id);
+
+    if (!activeSessionId || activeSessionId !== clientSessionId) {
+      return errorResponse(res, 401, "SESSION_REVOKED");
     }
 
     req.user = {

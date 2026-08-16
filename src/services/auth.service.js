@@ -38,10 +38,12 @@ async function signUp({ email, password, fullName, role }) {
 
 /** تسجيل الدخول */
 async function signIn({ email, password }) {
+  console.log("{ email, password }:",{ email, password })
   const { data, error } = await supabaseAnon.auth.signInWithPassword({
     email,
     password,
   });
+  console.log("error",error,data)
   return { data, error };
 }
 

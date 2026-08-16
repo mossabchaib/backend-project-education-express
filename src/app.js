@@ -18,6 +18,7 @@ const progressRoutes = require("./routes/progress.routes");
 const { errorResponse } = require("./utils/response");
 const liveRoutes = require("./routes/live.routes");
 const subscriptionRoutes = require("./routes/subscription.routes");
+const ratingRoutes = require("./routes/rating.routes");
 const app = express();
 
 
@@ -43,6 +44,7 @@ app.use("/api/courses", courseRoutes);
 app.use("/api/modules", moduleRoutes);
 app.use("/api/lessons", lessonRoutes);
 app.use("/api/progress", progressRoutes);
+app.use("/api/ratings", ratingRoutes);
 // 404 Handler
 app.use((req, res) => errorResponse(res, 404, "Route not found."));
 

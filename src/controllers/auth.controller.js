@@ -3,7 +3,7 @@
 const authService = require("../services/auth.service");
 const { successResponse, errorResponse } = require("../utils/response");
 const { logError } = require("../utils/logger");
-
+const sessionService = require("../services/session.service");
 async function signUp(req, res) {
   try {
     const { email, password, fullName, role } = req.body;
@@ -36,21 +36,29 @@ async function signIn(req, res) {
     const { data, error } = await authService.signIn({ email, password });
     if (error) return errorResponse(res, 401, error.message);
 
+    // إنشاء/استبدال الجلسة النشطة الوحيدة لهذا المستخدم
+    const sessionId = await sessionService.upsertActiveSession(
+      data.user.id,
+      req.headers["user-agent"]
+    );
+
     return successResponse(res, 200, "Signed in successfully.", {
       user: data.user,
-      session: data.session, // يحتوي access_token و refresh_token
+      session: data.session,
+      sessionId, // ← الـ client لازم يخزنه ويبعته في header x-session-id مع كل request
     });
   } catch (err) {
     logError("signIn failed", err);
     return errorResponse(res, 500, "Unexpected error during sign in.");
   }
 }
-
 async function signOut(req, res) {
   try {
     const { refreshToken } = req.body;
     const { error } = await authService.signOut(req.accessToken, refreshToken);
     if (error) return errorResponse(res, 400, error.message);
+
+    await sessionService.deleteActiveSession(req.user.id);
 
     return successResponse(res, 200, "Signed out successfully.");
   } catch (err) {
@@ -61,11 +69,18 @@ async function signOut(req, res) {
 
 async function refreshSession(req, res) {
   try {
-    const { refreshToken } = req.body;
+    const { refreshToken, sessionId } = req.body;
     if (!refreshToken) return errorResponse(res, 400, "refreshToken is required.");
+    if (!sessionId) return errorResponse(res, 400, "sessionId is required.");
 
     const { data, error } = await authService.refreshSession(refreshToken);
     if (error) return errorResponse(res, 401, error.message);
+
+    const activeSessionId = await sessionService.getActiveSessionId(data.user.id);
+
+    if (!activeSessionId || activeSessionId !== sessionId) {
+      return errorResponse(res, 401, "SESSION_REVOKED");
+    }
 
     return successResponse(res, 200, "Session refreshed.", { session: data.session });
   } catch (err) {
