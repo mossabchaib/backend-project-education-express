@@ -71,9 +71,27 @@ console.log("getTeacherCourses query:", query.toString());
 async function getTeacherCourse(id) {
   const { data, error } = await supabase
     .from("courses")
-    .select("id, title, slug, description, teacher_id, category_id, price, status, created_at, updated_at, image_cover, level, language, subtitle, categories(id, name, slug), profiles!courses_teacher_id_fkey(id, full_name, email)")
+    .select(`
+      id, 
+      title, 
+      slug, 
+      description, 
+      teacher_id, 
+      category_id, 
+      price, 
+      status, 
+      created_at, 
+      updated_at, 
+      image_cover, 
+      level, 
+      language, 
+      subtitle, 
+      categories(id, name, slug), 
+      profiles:teacher_id(id, full_name, email)
+    `)
     .eq("id", id)
     .single();
+console.log("data:",data)
   if (error) throw error;
   return data;
 }
