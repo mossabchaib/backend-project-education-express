@@ -6,10 +6,9 @@ const logger = require("../utils/logger");
 
 exports.getQuizzesByCourse = async (req, res) => {
   try {
-    console.log("getQuizzesByCourse called with courseId:", req.params.courseId);
 
     const data = await quizService.getQuizzesByCourse(req.params.courseId);
-
+    console.log("getQuizzesByCourse data:", data);
     return successResponse(res, 200, "Quizzes retrieved successfully", data);
   } catch (err) {
     console.log("getQuizzesByCourse failed", err);

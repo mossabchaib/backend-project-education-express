@@ -18,6 +18,24 @@ async function getSessions(req, res) {
     return errorResponse(res, 500, err.message);
   }
 }
+/**
+ * GET /live-sessions/my-sessions
+ * يجلب جلسات المعلّم المسجّل دخوله فقط (بناءً على التوكن)
+ */
+async function getMySessions(req, res) {
+  try {
+    const teacherId = req.user.id;
+    const sessions = await liveService.listSessionsByTeacherId(teacherId);
+    return successResponse(res, 200, "Teacher sessions fetched successfully", sessions);
+  } catch (err) {
+    return errorResponse(res, 500, err.message);
+  }
+}
+
+/**
+ * GET /live-sessions/teacher/:teacherId
+ * يجلب جلسات معلّم معيّن عبر ID
+ */
 
 /**
  * GET /courses/:courseId/live-sessions
@@ -51,15 +69,17 @@ async function getSessionById(req, res) {
 async function createSession(req, res) {
   try {
     const { title, course_id, host, startsAt, duration, attendees, joinUrl } = req.body;
-console.log("req.body", req.body);
+    const teacherId = req.user.id; // من التوكن مباشرة، وليس من الفرونت إند
+
     if (!title || !course_id || !host || !startsAt) {
       return errorResponse(res, 400, "title, course_id, host, startsAt are required");
     }
-console.log("Creating session with data:", { title, course_id, host, startsAt, duration, attendees, joinUrl });
+
     const session = await liveService.createSession({
       title,
       course_id,
       host,
+      teacherId,
       startsAt,
       duration,
       attendees,
@@ -71,7 +91,6 @@ console.log("Creating session with data:", { title, course_id, host, startsAt, d
     return errorResponse(res, 500, err.message);
   }
 }
-
 /**
  * PUT /live-sessions/:id
  */
@@ -111,11 +130,21 @@ async function deleteSession(req, res) {
     return errorResponse(res, 500, err.message);
   }
 }
-
+async function getSessionsByTeacher(req, res) {
+  try {
+    const { teacherId } = req.params;
+    const sessions = await liveService.listSessionsByTeacherId(teacherId);
+    return successResponse(res, 200, "Teacher sessions fetched successfully", sessions);
+  } catch (err) {
+    return errorResponse(res, 500, err.message);
+  }
+}
 module.exports = {
   getSessions,
   getSessionsByCourse,
   getSessionById,
+  getMySessions,
+  getSessionsByTeacher,
   createSession,
   updateSession,
   endSession,

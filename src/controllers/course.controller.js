@@ -4,7 +4,9 @@ const courseService = require("../services/course.service");
 async function list(req, res) {
   try {
     const { teacherId, categoryId, status } = req.query;
+    console.log("list called with query params:", { teacherId, categoryId, status });
     const courses = await courseService.getTeacherCourses({ teacherId, categoryId, status });
+    console.log("courses:", courses,courses.length);
     res.status(200).json({ courses });
   } catch (err) {
     res.status(500).json({ message: "فشل جلب الكورسات", error: err.message });

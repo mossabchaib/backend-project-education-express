@@ -45,7 +45,9 @@ async function updateLesson(id, payload) {
     .eq("id", id)
     .select()
     .single();
-  if (error) throw error;
+  if (error) {
+    console.log("error:", error);
+    throw error};
   return data;
 }
 

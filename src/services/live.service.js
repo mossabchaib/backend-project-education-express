@@ -47,7 +47,7 @@ async function getSession(id) {
  * إنشاء جلسة جديدة
  */
 async function createSession(payload) {
-  const { title, course_id, host, startsAt, duration, attendees, joinUrl } = payload;
+  const { title, course_id, host, teacherId, startsAt, duration, attendees, joinUrl } = payload;
 
   const { data, error } = await supabase
     .from(TABLE)
@@ -56,6 +56,7 @@ async function createSession(payload) {
         title,
         course_id,
         host,
+        teacher_id: teacherId,
         starts_at: startsAt,
         duration,
         attendees: attendees ?? 0,
@@ -68,13 +69,27 @@ async function createSession(payload) {
 
   if (error) {
     console.log("Error creating session:", error);
-    throw error};
+    throw error;
+  }
   return data;
 }
 
 /**
  * تحديث جلسة (جزئي)
  */
+/**
+ * جلب جلسات معلّم معيّن (بناءً على host)
+ */
+async function listSessionsByHost(hostId) {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select("*")
+    .eq("host", hostId)
+    .order("starts_at", { ascending: true });
+
+  if (error) throw error;
+  return data;
+}
 async function updateSession(id, payload) {
   const updateData = {};
 
@@ -121,10 +136,21 @@ async function deleteSession(id) {
   if (error) throw error;
   return { id };
 }
+async function listSessionsByTeacherId(teacherId) {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select("*")
+    .eq("teacher_id", teacherId)
+    .order("starts_at", { ascending: true });
 
+  if (error) throw error;
+  return data;
+}
 module.exports = {
   listSessions,
   listSessionsByCourse,
+  listSessionsByHost,  
+  listSessionsByTeacherId,
   getSession,
   createSession,
   updateSession,

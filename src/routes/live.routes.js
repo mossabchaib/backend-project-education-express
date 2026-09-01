@@ -8,10 +8,24 @@ const checkRole = require("../middlewares/roleMiddleware");
 // جلب كل الجلسات (فلترة اختيارية عبر ?courseId= و ?status=)
 router.get("/", verifyToken, liveController.getSessions);
 
+// ⚠️ يجب أن تكون هذه الـ routes الثابتة قبل "/:id"
+router.get(
+  "/my-sessions",
+  verifyToken,
+  checkRole("teacher", "admin"),
+  liveController.getMySessions
+);
+
+router.get(
+  "/teacher/:teacherId",
+  verifyToken,
+  liveController.getSessionsByTeacher
+);
+
 // جلسات كورس معيّن
 router.get("/course/:courseId", verifyToken, liveController.getSessionsByCourse);
 
-// جلسة واحدة
+// جلسة واحدة — يجب أن يكون هذا آخر GET route عام لأنه يلتقط أي قيمة
 router.get("/:id", verifyToken, liveController.getSessionById);
 
 // إنشاء جلسة — للمعلّم/الأدمن فقط

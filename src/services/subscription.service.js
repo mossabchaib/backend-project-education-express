@@ -94,33 +94,53 @@ async function submitSubscription(userId, payload) {
  * جلب اشتراكات الطالب: آخر باقة + كل الكورسات المشترى فيها
  */
 async function getMySubscription(userId) {
-  console.log("test")
-  // 1) جلب آخر اشتراك من نوع "باقة" (plan_name موجود)
+  console.log("test");
+
+  // 1) جلب جميع subscriptions الخاصة بالمستخدم
   const { data: planData, error: planError } = await supabaseAnon
     .from("subscriptions")
     .select("*")
     .eq("user_id", userId)
-    .not("plan_name", "is", null)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-console.log("planData:",planData)
+    .order("created_at", { ascending: false });
+
   if (planError) throw planError;
 
-  const plan = planData || null;
+  console.log("planData:", planData);
+
+  let plan = null;
   let courses = [];
 
-  // 2) إذا لم يكن هناك باقة، نبحث في subscription_courses
-  if (!plan) {
+  // 2) البحث داخل جميع subscriptions
+  const activeCourseSubscription = (planData || []).find(
+    (subscription) =>
+      subscription.plan_name === null &&
+      subscription.status === "active"
+  );
+
+  // 3) إذا وجد subscription بدون plan_name وحالته active
+  //    نجلب الـ courses المرتبطة به
+  if (activeCourseSubscription) {
     const { data: courseLinks, error: coursesError } = await supabaseAnon
       .from("subscription_courses")
       .select(`
         id,
         course_id,
-        courses ( id, title, slug, image_cover ),
-        subscriptions!inner ( id, status, starts_at, ends_at, user_id )
+        courses (
+          id,
+          title,
+          slug,
+          image_cover
+        ),
+        subscriptions!inner (
+          id,
+          status,
+          starts_at,
+          ends_at,
+          user_id
+        )
       `)
-      .eq("subscriptions.user_id", userId);
+      .eq("subscriptions.user_id", userId)
+      .eq("subscriptions.id", activeCourseSubscription.id);
 
     if (coursesError) throw coursesError;
 
@@ -133,7 +153,16 @@ console.log("planData:",planData)
       course: link.courses,
     }));
   }
-console.log("{ plan, courses }:",{ plan, courses })
+
+  // 4) إذا وجد subscription له plan_name
+  //    نضعه في plan
+  plan =
+    (planData || []).find(
+      (subscription) => subscription.plan_name !== null
+    ) || null;
+
+  console.log("{ plan, courses }:", { plan, courses });
+
   return { plan, courses };
 }
 
