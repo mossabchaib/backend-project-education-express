@@ -6,14 +6,12 @@ const { supabaseAnon: supabase } = require("../config/supabaseClient");
  * كترجع الموديولات مرتبة مع الدروس متاعها متداخلة (nested).
  */
 async function resolvedModules(courseId) {
-  console.log("kmdsfmksj")
   const { data, error } = await supabase
     .from("modules")
     .select("*, lessons(*)")
     .eq("course_id", courseId)
     .order("order_index", { ascending: true });
   if (error){
-    console.log("error",error)
      throw error};
 
   // نرتب الدروس جوّه كل موديول بـ order_index باش تبقى نفس القراءة متاع الفرونت
@@ -32,7 +30,6 @@ const getStoredModules = resolvedModules;
  * الموديولات/الدروس القدام اللي ماجاوش ذكرهم فـ الطلب الجديد كيتشالو (sync كامل).
  */
 async function setStoredModules(courseId, modules) {
-  console.log("Connecting to database...", { courseId });
 
   const { data: existing, error: exErr } = await supabase
     .from("modules")
@@ -40,7 +37,6 @@ async function setStoredModules(courseId, modules) {
     .eq("course_id", courseId);
 
   if (exErr) {
-    console.error("❌ Error fetching existing modules:", exErr);
     throw exErr;
   }
 
@@ -52,7 +48,6 @@ async function setStoredModules(courseId, modules) {
   if (toDelete.length) {
     const { error: delErr } = await supabase.from("modules").delete().in("id", toDelete);
     if (delErr) {
-      console.error("❌ Error deleting modules:", delErr);
       throw delErr;
     }
   }
@@ -72,7 +67,6 @@ async function setStoredModules(courseId, modules) {
         .single();
         
       if (error) {
-        console.error("❌ Error updating module:", error);
         throw error;
       }
       moduleRow = data;
@@ -84,7 +78,6 @@ async function setStoredModules(courseId, modules) {
         .single();
         
       if (error) {
-        console.error("❌ Error inserting module:", error);
         throw error;
       }
       moduleRow = data;

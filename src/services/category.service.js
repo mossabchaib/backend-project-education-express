@@ -48,7 +48,6 @@ async function uploadBase64ToStorage(base64String, bucketName = "categories") {
 
     return urlData.publicUrl;
   } catch (err) {
-    console.error("❌ خطأ أثناء الرفع لـ Storage:", err.message || err);
     throw err;
   }
 }
@@ -78,7 +77,6 @@ async function getAdminCategory(id) {
 
 /** إضافة / تحديث تصنيف */
 async function upsertCategory(payload) {
-  console.log("\n📥 استلام طلب upsertCategory البيانات:", payload);
 
   // استبعاد description، واستخراج الحقول الخاصة بالصور
   const { id, description, icon, image, image_url, ...rest } = payload;
@@ -104,7 +102,6 @@ async function upsertCategory(payload) {
     }
   }
 
-  console.log("💾 البيانات النهائية التي سيتم إدخالها لقاعدة البيانات:", categoryData);
 
   const isUpdate = Boolean(id && typeof id === "string" && id.trim() !== "");
 
@@ -117,7 +114,6 @@ async function upsertCategory(payload) {
       .single();
 
     if (error) {
-      console.error("❌ خطأ Supabase عند التحديث:", error);
       throw error;
     }
     return data;
@@ -130,7 +126,6 @@ async function upsertCategory(payload) {
     .single();
 
   if (error) {
-    console.error("❌ خطأ Supabase عند الإضافة:", error);
     throw error;
   }
 

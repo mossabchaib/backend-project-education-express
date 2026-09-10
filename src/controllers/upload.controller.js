@@ -17,7 +17,6 @@ async function uploadFile(req, res) {
       data: upload,
     });
   } catch (err) {
-    console.error("[upload.controller] uploadFile failed:", err);
     return res.status(err.statusCode || 500).json({
       status: "error",
       message: err.message || "Upload failed.",
@@ -36,7 +35,6 @@ async function getUploads(req, res) {
       data: uploads,
     });
   } catch (err) {
-    console.error("[upload.controller] getUploads failed:", err);
     return res.status(err.statusCode || 500).json({
       status: "error",
       message: err.message || "Failed to fetch uploads.",
@@ -55,7 +53,6 @@ async function removeUpload(req, res) {
       data: deleted,
     });
   } catch (err) {
-    console.error("[upload.controller] removeUpload failed:", err);
     return res.status(err.statusCode || 500).json({
       status: "error",
       message: err.message || "Failed to delete upload.",
@@ -67,11 +64,9 @@ async function signUpload(req, res) {
   try {
     const { fileName, kind, courseId,lesson_id } = req.body;
     const teacherId = req.user.id;
-    console.log("[upload.controller] signUpload called with:", { fileName, kind, courseId, lesson_id, teacherId });
     const signed = await uploadService.createSignedUpload({ fileName, kind, courseId, lesson_id, teacherId });
     return res.status(200).json({ status: "success", data: signed });
   } catch (err) {
-    console.error("[upload.controller] signUpload failed:", err);
     return res.status(err.statusCode || 500).json({
       status: "error",
       message: err.message || "Failed to create signed upload URL.",
@@ -82,8 +77,7 @@ async function signUpload(req, res) {
 async function confirmUpload(req, res) {
   try {
     const { key, fileName, mimeType, fileSize, kind, course_id, lesson_id } = req.body;
-    console.log("[upload.controller] confirmUpload called with:", { key, fileName, mimeType, fileSize, kind, course_id, lesson_id });
-    const teacherId = req.user.id;
+       const teacherId = req.user.id;
 
     const upload = await uploadService.confirmUpload({
       key, fileName, mimeType, fileSize, kind,  course_id, lesson_id, teacherId,
@@ -96,7 +90,6 @@ async function confirmUpload(req, res) {
       data: upload,
     });
   } catch (err) {
-    console.error("[upload.controller] confirmUpload failed:", err);
     return res.status(err.statusCode || 500).json({
       status: "error",
       message: err.message || "Failed to confirm upload.",

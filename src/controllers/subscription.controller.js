@@ -6,7 +6,6 @@ async function submit(req, res) {
     const subscription = await subscriptionService.submitSubscription(req.user.id, req.body);
     res.status(201).json({ subscription });
   } catch (err) {
-    console.error("❌ Error inside subscription.service:", err);
     res.status(400).json({ message: "فشل إرسال طلب الاشتراك", error: err.message });
   }
 }

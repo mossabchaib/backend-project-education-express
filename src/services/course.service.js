@@ -47,7 +47,6 @@ async function uploadBase64ToStorage(base64String, bucketName = "courses") {
 
     return urlData.publicUrl;
   } catch (err) {
-    console.error("❌ خطأ أثناء الرفع لـ Storage (الكورسات):", err.message || err);
     throw err;
   }
 }
@@ -62,7 +61,6 @@ async function getTeacherCourses({ teacherId, categoryId, status } = {}) {
   if (categoryId) query = query.eq("category_id", categoryId);
   if (status) query = query.eq("status", status);
   else if (!teacherId) query = query.eq("status", "published");
-console.log("getTeacherCourses query:", query.toString());
   const { data, error } = await query;
   if (error) throw error;
   return data;
@@ -91,7 +89,6 @@ async function getTeacherCourse(id) {
     `)
     .eq("id", id)
     .single();
-console.log("data:",data)
   if (error) throw error;
   return data;
 }
@@ -102,7 +99,6 @@ async function upsertTeacherCourse(payload) {
   // استبعاد الحقول غير الموجودة في جدول courses مثل modules أو course أو id المكرر
   const { image_cover, modules: _modules, course: _nestedCourse, id: _ignoredId, ...rest } = payload;
 
-  console.log("upsertTeacherCourse payload:", payload, "extracted id:", id);
 
   let finalCoverUrl = image_cover;
   if (image_cover && typeof image_cover === "string" && image_cover.startsWith("data:")) {
@@ -116,7 +112,6 @@ async function upsertTeacherCourse(payload) {
   };
 
   const isUpdate = Boolean(id && (typeof id === "string" || typeof id === "number") && String(id).trim() !== "");
-  console.log("isUpdate:", isUpdate, "id:", id, "courseData:", courseData);
 
   if (isUpdate) {
     const { data, error } = await supabase
@@ -127,7 +122,6 @@ async function upsertTeacherCourse(payload) {
       .single();
 
     if (error) {
-      console.log("ersr:", error);
       throw error;
     }
     
@@ -143,7 +137,6 @@ async function upsertTeacherCourse(payload) {
     .single();
 
   if (error) {
-    console.log("err:", error);
     throw error;
   }
   return data;

@@ -33,7 +33,6 @@ function handleSingleFileUpload(req, res, next) {
 }
 
 function requireFilePresent(req, res, next) {
-console.log(":req",req)
   if (!req.file) {
     return sendError(res, 400, "No file was attached to the request.");
   }

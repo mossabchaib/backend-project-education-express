@@ -94,7 +94,6 @@ async function submitSubscription(userId, payload) {
  * جلب اشتراكات الطالب: آخر باقة + كل الكورسات المشترى فيها
  */
 async function getMySubscription(userId) {
-  console.log("test");
 
   // 1) جلب جميع subscriptions الخاصة بالمستخدم
   const { data: planData, error: planError } = await supabaseAnon
@@ -105,7 +104,6 @@ async function getMySubscription(userId) {
 
   if (planError) throw planError;
 
-  console.log("planData:", planData);
 
   let plan = null;
   let courses = [];
@@ -161,7 +159,6 @@ async function getMySubscription(userId) {
       (subscription) => subscription.plan_name !== null
     ) || null;
 
-  console.log("{ plan, courses }:", { plan, courses });
 
   return { plan, courses };
 }

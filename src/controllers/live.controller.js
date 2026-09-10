@@ -97,7 +97,6 @@ async function createSession(req, res) {
 async function updateSession(req, res) {
   try {
     const { id } = req.params;
-    console.log("Updating session with ID:", id, "and data:", req.body);
     const session = await liveService.updateSession(id, req.body);
     return successResponse(res, 200, "Session updated successfully", session);
   } catch (err) {

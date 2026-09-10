@@ -2,7 +2,6 @@
 
 const profileService = require("../services/profile.service");
 const { successResponse, errorResponse } = require("../utils/response");
-const { logError } = require("../utils/logger");
 
 const VALID_ROLES = ["student", "teacher", "admin"];
 
@@ -13,7 +12,6 @@ async function getMyProfile(req, res) {
     if (error || !data) return errorResponse(res, 404, "Profile not found.");
     return successResponse(res, 200, "Profile fetched.", data);
   } catch (err) {
-    logError("getMyProfile failed", err);
     return errorResponse(res, 500, "Unexpected error fetching profile.");
   }
 }
@@ -35,7 +33,6 @@ async function updateMyProfile(req, res) {
 
     return successResponse(res, 200, "Profile updated.", data);
   } catch (err) {
-    logError("updateMyProfile failed", err);
     return errorResponse(res, 500, "Unexpected error updating profile.");
   }
 }
@@ -56,7 +53,6 @@ async function listUsers(req, res) {
 
     return successResponse(res, 200, "Users fetched.", { users: data, total: count, page, limit });
   } catch (err) {
-    logError("listUsers failed", err);
     return errorResponse(res, 500, "Unexpected error listing users.");
   }
 }
@@ -77,7 +73,6 @@ async function changeRole(req, res) {
 
     return successResponse(res, 200, "User role updated.", data);
   } catch (err) {
-    logError("changeRole failed", err);
     return errorResponse(res, 500, "Unexpected error updating role.");
   }
 }

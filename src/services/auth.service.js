@@ -1,49 +1,70 @@
 // src/services/auth.service.js
 const { supabaseAnon, supabaseAdmin } = require("../config/supabaseClient");
 const { sendConfirmationEmail, sendPasswordResetEmail } = require("./email.service");
-
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:8080/";
-
+const { resend, EMAIL_FROM } = require("../config/resend");
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://futureleaderszone.com";
 /**
  * تسجيل مستخدم جديد بدون ما نخلي Supabase يبعت الإيميل تلقائي.
  * كنستعملو generateLink (service role) اللي كيخلق المستخدم ويرجع لينا الرابط
  * بلا ما يبعت شي حاجة، وبعدها كنبعتوه احنا عبر Resend.
  */
 async function signUp({ email, password, fullName, role }) {
-  console.log("signUp called with:", role); // Debugging line to check the received parameters
+
+  // 1. Generate Supabase confirmation link
   const { data, error } = await supabaseAdmin.auth.admin.generateLink({
     type: "signup",
     email,
     password,
     options: {
-      data: { full_name: fullName || "", role: role  }, // ← الفرق
+      data: {
+        full_name: fullName || "",
+        role: role,
+      },
       redirectTo: `${FRONTEND_URL}/auth/callback`,
     },
   });
 
+  // 2. Handle Supabase error
   if (error) {
-    console.error("Error generating signup link:", error); // Debugging line to log the error
-    return { data: null, error }};
-
+    return {
+      data: null,
+      error,
+    };
+  }
+  // 3. Get confirmation link
   const confirmationLink = data.properties.action_link;
 
+  // 4. Send confirmation email through Resend
   try {
-    await sendConfirmationEmail(email, confirmationLink);
+     const emailResult = await sendConfirmationEmail(
+    email,
+    confirmationLink
+  );
+
   } catch (err) {
-    return { data: null, error: { message: "User created but failed to send confirmation email." } };
+   
+
+    return {
+      data: null,
+      error: {
+        message: "User created but failed to send confirmation email.",
+      },
+    };
   }
 
-  return { data, error: null };
+  // 5. Success
+  return {
+    data,
+    error: null,
+  };
 }
 
 /** تسجيل الدخول */
 async function signIn({ email, password }) {
-  console.log("{ email, password }:",{ email, password })
   const { data, error } = await supabaseAnon.auth.signInWithPassword({
     email,
     password,
   });
-  console.log("error",error,data)
   return { data, error };
 }
 

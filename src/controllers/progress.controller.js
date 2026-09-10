@@ -9,7 +9,6 @@ async function getMyProgress(req, res) {
     const progress = await progressService.getMyProgress(userId);
     return successResponse(res, 200, "تم جلب التقدّم بنجاح", progress);
   } catch (err) {
-    console.error("❌ Error inside progress.service (getMyProgress):", err);
     return errorResponse(res, 500, "فشل جلب التقدّم", err.message);
   }
 }
@@ -22,7 +21,6 @@ async function getCourseProgress(req, res) {
     const rows = await progressService.getCourseProgress(userId, courseId);
     return successResponse(res, 200, "تم جلب تقدّم الكورس بنجاح", rows);
   } catch (err) {
-    console.error("❌ Error inside progress.service (getCourseProgress):", err);
     return errorResponse(res, 500, "فشل جلب تقدّم الكورس", err.message);
   }
 }
@@ -35,7 +33,6 @@ async function getCourseProgressSummary(req, res) {
     const summary = await progressService.getCourseProgressSummary(userId, courseId);
     return successResponse(res, 200, "تم جلب ملخص التقدّم بنجاح", summary);
   } catch (err) {
-    console.error("❌ Error inside progress.service (getCourseProgressSummary):", err);
     return errorResponse(res, 500, "فشل جلب ملخص التقدّم", err.message);
   }
 }
@@ -46,7 +43,6 @@ async function getTeacherProgressRollup(req, res) {
     const rollup = await progressService.getTeacherProgressRollup(teacherId);
     return successResponse(res, 200, "تم جلب ملخص تقدّم الطلبة بنجاح", rollup);
   } catch (err) {
-    console.error("❌ Error inside progress.service (getTeacherProgressRollup):", err);
     return errorResponse(res, 500, "فشل جلب ملخص التقدّم", err.message);
   }
 }
@@ -63,7 +59,6 @@ async function setLessonComplete(req, res) {
     const row = await progressService.setLessonComplete(userId, courseId, lessonId, completed);
     return successResponse(res, 200, "تم تحديث التقدّم بنجاح", row);
   } catch (err) {
-    console.error("❌ Error inside progress.service (setLessonComplete):", err);
     return errorResponse(res, 400, "فشل تحديث التقدّم", err.message);
   }
 }

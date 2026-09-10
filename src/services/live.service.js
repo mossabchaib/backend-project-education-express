@@ -68,7 +68,6 @@ async function createSession(payload) {
     .single();
 
   if (error) {
-    console.log("Error creating session:", error);
     throw error;
   }
   return data;

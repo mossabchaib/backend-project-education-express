@@ -4,7 +4,6 @@ const path = require("path");
 const { validateFile } = require("../utils/fileValidation");
 // ✅ الصحيح: استيراد supabaseAdmin من ملف التهيئة
 const { supabaseAdmin } = require("../config/supabaseClient");
-const { logError } = require("../utils/logger");
 
 // Name of the Supabase Storage bucket that holds uploaded files.
 const BUCKET_NAME = process.env.SUPABASE_STORAGE_BUCKET || "lms-uploads-2026";
@@ -45,7 +44,6 @@ async function createSignedUpload({ fileName, kind, courseId,lesson_id, teacherI
     .createSignedUploadUrl(key);
 
   if (error) {
-    console.error("[upload.service] createSignedUploadUrl failed:", error);
     const wrappedError = new Error("Failed to create signed upload URL.");
     wrappedError.statusCode = 500;
     throw wrappedError;
@@ -95,14 +93,11 @@ async function confirmUpload({ key, fileName, mimeType, fileSize, kind, course_i
     .single();
 
   if (error) {
-    console.error("[upload.service] confirmUpload insert failed:", error);
     // تنظيف احترازي: احذف الملف من الـ storage لو فشل حفظ الميتاداتا
     await supabaseAdmin.storage
       .from(BUCKET_NAME)
       .remove([key])
-      .catch((cleanupErr) =>
-        console.error("[upload.service] cleanup after failed confirm failed:", cleanupErr)
-      );
+      .catch(() => {});
 
     const wrappedError = new Error("Failed to save upload metadata.");
     wrappedError.statusCode = 500;
@@ -117,30 +112,18 @@ async function confirmUpload({ key, fileName, mimeType, fileSize, kind, course_i
  * metadata. The binary itself never touches the "uploads" table.
  */
 async function uploadFileToR2({ file, courseId, teacherId }) {
-  console.log("=== [START] uploadFileToR2 ===");
-  console.log("Inputs received:", {
-    file: file ? { originalname: file.originalname, mimetype: file.mimetype, size: file.size } : null,
-    courseId,
-    teacherId
-  });
-
   const validation = validateFile(file);
-  console.log("1. Validation result:", validation);
-  
+
   if (!validation.valid) {
-    console.log("-> Validation failed with message:", validation.message);
     const error = new Error(validation.message);
     error.statusCode = 400;
     throw error;
   }
 
   const { kind } = validation;
-  console.log("2. File kind determined:", kind);
 
   const key = buildObjectKey(file.originalname, kind);
-  console.log("3. Generated storage key:", key);
 
-  console.log("4. Attempting upload to Supabase Storage...");
   const { error: uploadError } = await supabaseAdmin.storage
     .from(BUCKET_NAME)
     .upload(key, file.buffer, {
@@ -149,20 +132,12 @@ async function uploadFileToR2({ file, courseId, teacherId }) {
     });
 
   if (uploadError) {
-    console.log("-> Supabase Storage upload FAILED:", uploadError);
-    if (typeof logError === "function") {
-      logError("[upload.service] Failed to upload file to Supabase Storage", uploadError);
-    } else {
-      console.error("[upload.service] Failed to upload file to Supabase Storage", uploadError);
-    }
     const wrappedError = new Error("Failed to upload file.");
     wrappedError.statusCode = 500;
     throw wrappedError;
   }
-  console.log("-> Supabase Storage upload SUCCESSFUL");
 
   const fileUrl = buildPublicUrl(key);
-  console.log("5. Generated public URL:", fileUrl);
 
   const metadataRow = {
     file_url: fileUrl,
@@ -175,9 +150,7 @@ async function uploadFileToR2({ file, courseId, teacherId }) {
     teacher_id: teacherId,
     upload_date: new Date().toISOString(),
   };
-  console.log("6. Prepared metadataRow for Database insert:", metadataRow);
 
-  console.log("7. Attempting to insert metadata into 'uploads' table...");
   const { data, error } = await supabaseAdmin
     .from("uploads")
     .insert(metadataRow)
@@ -185,29 +158,17 @@ async function uploadFileToR2({ file, courseId, teacherId }) {
     .single();
 
   if (error) {
-    console.log("-> Database insert FAILED:", error);
-    if (typeof logError === "function") {
-      logError("[upload.service] Failed to save upload metadata", error);
-    } else {
-      console.error("[upload.service] Failed to save upload metadata", error);
-    }
-
-    console.log("-> Starting cleanup: removing orphaned object from storage...");
     await supabaseAdmin.storage
       .from(BUCKET_NAME)
       .remove([key])
-      .then(() => console.log("-> Cleanup successful: orphaned object removed"))
-      .catch((cleanupErr) =>
-        console.error("[upload.service] Failed to clean up orphaned storage object", cleanupErr)
-      );
+      .then(() => {})
+      .catch(() => {});
 
     const wrappedError = new Error("Failed to save upload metadata.");
     wrappedError.statusCode = 500;
     throw wrappedError;
   }
 
-  console.log("-> Database insert SUCCESSFUL. Returned data:", data);
-  console.log("=== [END] uploadFileToR2 ===");
   return data;
 }
 
@@ -219,11 +180,6 @@ async function listUploads({ courseId, teacherId }) {
 
   const { data, error } = await query;
   if (error) {
-    if (typeof logError === "function") {
-      logError("[upload.service] Failed to list uploads", error);
-    } else {
-      console.error("[upload.service] Failed to list uploads", error);
-    }
     const wrappedError = new Error("Failed to fetch uploads.");
     wrappedError.statusCode = 500;
     throw wrappedError;
@@ -256,11 +212,6 @@ async function deleteUpload({ id, teacherId }) {
     .remove([existing.file_key]);
 
   if (removeError) {
-    if (typeof logError === "function") {
-      logError("[upload.service] Failed to delete storage object", removeError);
-    } else {
-      console.error("[upload.service] Failed to delete storage object", removeError);
-    }
     const wrappedError = new Error("Failed to delete upload file.");
     wrappedError.statusCode = 500;
     throw wrappedError;
@@ -268,11 +219,6 @@ async function deleteUpload({ id, teacherId }) {
 
   const { error: deleteError } = await supabaseAdmin.from("uploads").delete().eq("id", id);
   if (deleteError) {
-    if (typeof logError === "function") {
-      logError("[upload.service] Failed to delete upload metadata", deleteError);
-    } else {
-      console.error("[upload.service] Failed to delete upload metadata", deleteError);
-    }
     const wrappedError = new Error("Failed to delete upload record.");
     wrappedError.statusCode = 500;
     throw wrappedError;

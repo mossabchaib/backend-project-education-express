@@ -46,16 +46,13 @@ async function updateLesson(id, payload) {
     .select()
     .single();
   if (error) {
-    console.log("error:", error);
     throw error};
   return data;
 }
 
 async function deleteLesson(id) {
-  console.log("kdmskmdsklmsld",id)
   const { error } = await supabase.from("lessons").delete().eq("id", id);
   if (error) {
-    console.log("error:",error)
     throw error};
   return true;
 }

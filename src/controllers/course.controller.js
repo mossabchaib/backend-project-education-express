@@ -4,9 +4,7 @@ const courseService = require("../services/course.service");
 async function list(req, res) {
   try {
     const { teacherId, categoryId, status } = req.query;
-    console.log("list called with query params:", { teacherId, categoryId, status });
     const courses = await courseService.getTeacherCourses({ teacherId, categoryId, status });
-    console.log("courses:", courses,courses.length);
     res.status(200).json({ courses });
   } catch (err) {
     res.status(500).json({ message: "فشل جلب الكورسات", error: err.message });
@@ -15,13 +13,11 @@ async function list(req, res) {
 
 /** كورسات الأستاذ لي كدير login بيه حاليا */
 async function listMine(req, res) {
-  console.log("req.user.id", req.user);
   try {
     const courses = await courseService.getTeacherCourses({ teacherId: req.user.id });
 
     res.status(200).json({ courses });
   } catch (err) {
-    console.log("error:",err)
     res.status(500).json({ message: "فشل جلب كورساتك", error: err.message });
   }
 }
@@ -38,7 +34,6 @@ async function getOne(req, res) {
 async function create(req, res) {
   try {
     const payload = { ...req.body, teacher_id: req.body.teacher_id || req.user.id };
-    console.log("payload:", payload);
     const course = await courseService.upsertTeacherCourse(payload);
     res.status(201).json({ course });
   } catch (err) {

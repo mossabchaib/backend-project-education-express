@@ -3,13 +3,11 @@ const { supabaseAnon: supabase } = require("../config/supabaseClient");
 /* ============ Quizzes ============ */
 
 async function getQuizzesByCourse(courseId) {
-  console.log("getQuizzesByCourse called with courseId:", courseId);
   const { data, error } = await supabase
     .from("quizzes")
     .select(`*, questions(*, question_options(*), question_true_false(*), matching_pairs(*))`)
     .eq("course_id", courseId);
   if (error) {
-    console.error("Error fetching quizzes by course:", error);
     throw error;
   }
   return data;
@@ -27,7 +25,6 @@ async function getQuizById(id) {
 
 async function createQuiz(payload) {
   const { title, minutes, courseId, questions = [] } = payload;
-console.log("createQuiz called with payload:", payload);
   const { data: quiz, error: quizErr } = await supabase
     .from("quizzes")
     .insert({ title, minutes, course_id:courseId })

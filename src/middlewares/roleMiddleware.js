@@ -9,9 +9,6 @@ function requireRole(...allowedRoles) {
   return (req, res, next) => {
     // دمج وتسطيح المصفوفات لتجنب مشكلة المصفوفات المتداخلة
     const rolesArray = allowedRoles.flat();
-
-    console.log("Checking role for user:", req.user, rolesArray, rolesArray.includes(req.user.role));
-    
     if (!req.user) {
       return errorResponse(res, 401, "Authentication required.");
     }
@@ -24,7 +21,6 @@ function requireRole(...allowedRoles) {
       );
     }
     
-    console.log("Role check passed for user:", req.user);
     next();
   };
 }

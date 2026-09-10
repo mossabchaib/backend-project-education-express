@@ -6,7 +6,6 @@ async function list(req, res) {
     const categories = await categoryService.getAdminCategories();
     res.status(200).json({ categories });
   } catch (err) {
-    console.error("❌ Error inside category.service:", err); // 👈 أضف هذا السطر
     res.status(500).json({ message: "فشل جلب التصنيفات", error: err.message });
   }
 }

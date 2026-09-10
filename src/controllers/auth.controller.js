@@ -2,7 +2,6 @@
 
 const authService = require("../services/auth.service");
 const { successResponse, errorResponse } = require("../utils/response");
-const { logError } = require("../utils/logger");
 const sessionService = require("../services/session.service");
 async function signUp(req, res) {
   try {
@@ -10,10 +9,8 @@ async function signUp(req, res) {
     if (!email || !password) {
       return errorResponse(res, 400, "email and password are required.");
     }
-    console.log("Received role:", role); // Debugging line to check the received role
     const allowedRoles = ["student", "teacher"]; // admin ما كيتسجلش من هنا أبداً
     const safeRole = allowedRoles.includes(role) ? role : "student";
-    console.log("Using role:", safeRole); // Debugging line to check the role being used
     const { data, error } = await authService.signUp({ email, password, fullName, role: safeRole });
     if (error) return errorResponse(res, 400, error.message);
 
@@ -22,7 +19,6 @@ async function signUp(req, res) {
       session: data.session,
     });
   } catch (err) {
-    logError("signUp failed", err);
     return errorResponse(res, 500, "Unexpected error during sign up.");
   }
 }
@@ -48,7 +44,6 @@ async function signIn(req, res) {
       sessionId, // ← الـ client لازم يخزنه ويبعته في header x-session-id مع كل request
     });
   } catch (err) {
-    logError("signIn failed", err);
     return errorResponse(res, 500, "Unexpected error during sign in.");
   }
 }
@@ -62,7 +57,6 @@ async function signOut(req, res) {
 
     return successResponse(res, 200, "Signed out successfully.");
   } catch (err) {
-    logError("signOut failed", err);
     return errorResponse(res, 500, "Unexpected error during sign out.");
   }
 }
@@ -84,7 +78,6 @@ async function refreshSession(req, res) {
 
     return successResponse(res, 200, "Session refreshed.", { session: data.session });
   } catch (err) {
-    logError("refreshSession failed", err);
     return errorResponse(res, 500, "Unexpected error during session refresh.");
   }
 }
@@ -99,7 +92,6 @@ async function forgotPassword(req, res) {
 
     return successResponse(res, 200, "Password reset email sent (if this email exists).");
   } catch (err) {
-    logError("forgotPassword failed", err);
     return errorResponse(res, 500, "Unexpected error during password reset request.");
   }
 }
@@ -115,7 +107,6 @@ async function resetPassword(req, res) {
 
     return successResponse(res, 200, "Password updated successfully.");
   } catch (err) {
-    logError("resetPassword failed", err);
     return errorResponse(res, 500, "Unexpected error during password reset.");
   }
 }
