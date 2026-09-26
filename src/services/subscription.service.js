@@ -94,30 +94,49 @@ async function submitSubscription(userId, payload) {
  * جلب اشتراكات الطالب: آخر باقة + كل الكورسات المشترى فيها
  */
 async function getMySubscription(userId) {
+  // 1) Validate userId
+  if (!userId) {
+    return {
+      plan: null,
+      courses: [],
+    };
+  }
 
-  // 1) جلب جميع subscriptions الخاصة بالمستخدم
+  // 2) Get all subscriptions for the user
   const { data: planData, error: planError } = await supabaseAnon
     .from("subscriptions")
     .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
-  if (planError) throw planError;
+  if (planError) {
+    throw planError;
+  }
 
+ 
 
   let plan = null;
   let courses = [];
 
-  // 2) البحث داخل جميع subscriptions
-  const activeCourseSubscription = (planData || []).find(
+  // 3) Get ALL active course subscriptions
+  //    plan_name === null means this is a course subscription
+  const activeCourseSubscriptions = (planData || []).filter(
     (subscription) =>
       subscription.plan_name === null &&
       subscription.status === "active"
   );
 
-  // 3) إذا وجد subscription بدون plan_name وحالته active
-  //    نجلب الـ courses المرتبطة به
-  if (activeCourseSubscription) {
+ 
+
+  // 4) Get courses belonging to ALL active course subscriptions
+  if (activeCourseSubscriptions.length > 0) {
+    // Extract all subscription IDs
+    const subscriptionIds = activeCourseSubscriptions.map(
+      (subscription) => subscription.id
+    );
+
+   
+
     const { data: courseLinks, error: coursesError } = await supabaseAnon
       .from("subscription_courses")
       .select(`
@@ -138,10 +157,13 @@ async function getMySubscription(userId) {
         )
       `)
       .eq("subscriptions.user_id", userId)
-      .eq("subscriptions.id", activeCourseSubscription.id);
+      .in("subscriptions.id", subscriptionIds);
 
-    if (coursesError) throw coursesError;
+    if (coursesError) {
+      throw coursesError;
+    }
 
+    // 5) Format courses
     courses = (courseLinks || []).map((link) => ({
       subscription_id: link.subscriptions.id,
       status: link.subscriptions.status,
@@ -152,15 +174,18 @@ async function getMySubscription(userId) {
     }));
   }
 
-  // 4) إذا وجد subscription له plan_name
-  //    نضعه في plan
+  // 6) Get the user's normal plan subscription
+  //    plan_name !== null
   plan =
     (planData || []).find(
       (subscription) => subscription.plan_name !== null
     ) || null;
 
-
-  return { plan, courses };
+  // 7) Return result
+  return {
+    plan,
+    courses,
+  };
 }
 
 /** admin: جلب كل الطلبات المعلّقة */
